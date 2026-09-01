@@ -1,0 +1,30 @@
+{
+  "scores": {
+    "intent": 22,
+    "uniqueness": 20,
+    "eeat": 13,
+    "structure": 14,
+    "notation": 9,
+    "coherence": 9,
+    "total": 87
+  },
+  "score_rationale": {
+    "intent": "3点全てに結論ファーストで回答している",
+    "uniqueness": "実装者視点の切り口がある",
+    "eeat": "一次情報と出典が明記されている",
+    "structure": "結論ファーストと表を使用",
+    "notation": "長音省略とダッシュ不使用を遵守",
+    "coherence": "重複と矛盾なし"
+  },
+  "hallucination_flags": [],
+  "commodity_score": 40,
+  "commodity_rationale": "実装者視点の差分がある",
+  "cannibalization": [],
+  "human_review_notes": {
+    "fact_claims": ["費用は案件の規模と要件により変動します"],
+    "uniqueness_basis": "実装者視点の変動要因解説",
+    "risk_areas": ["具体額への言及がないか要確認"]
+  },
+  "verdict": "approve",
+  "fix_instructions": []
+}

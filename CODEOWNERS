@@ -1,0 +1,34 @@
+# 保護ファイル: 変更は代表の承認必須。自己改修 (P-17) の変更対象外。
+#
+# 安全装置に該当するコードは、実装した時点でこのファイルとCIの検知パターン
+# (.github/workflows/ci.yml の PROTECTED) の両方に追加する。
+# ズレは tests/protected_paths.test.ts が検出する。
+
+/CODEOWNERS                                        @rentaoshima100-rgb
+
+# CI + 定時実行 (ディレクトリ指定で配下すべてを保護。以下は意図の明示)
+/.github/workflows/                                @rentaoshima100-rgb
+/.github/workflows/ci.yml                          @rentaoshima100-rgb
+/.github/workflows/cron-hourly.yml                 @rentaoshima100-rgb
+/.github/workflows/cron-daily.yml                  @rentaoshima100-rgb
+/.github/workflows/cron-monthly.yml                @rentaoshima100-rgb
+
+# cronの実行本体。ワークフローだけ保護しても、ここでデッドマンスイープや
+# トリップワイヤ判定の呼び出しを外せば安全装置を無効化できるため同格で保護する
+/scripts/jobs/                                     @rentaoshima100-rgb
+
+# トリップワイヤ (halt / throttle)
+/packages/pipeline/src/tripwire/                   @rentaoshima100-rgb
+
+# 承認・公開の判定 (「公開トリガは承認のみ」「フェイルクローズド」の実装本体)
+/packages/pipeline/src/approvals/                  @rentaoshima100-rgb
+/packages/pipeline/src/publish/                    @rentaoshima100-rgb
+
+# 法令ゲート (薬機法・健康増進法・景表法・特別栽培農産物ガイドライン)。
+# ここを緩めると、順位が落ちるのではなく販売者に行政指導が来る。
+# 品質ゲートより上位の保護対象として扱う
+/packages/pipeline/src/quality/compliance_gate.ts  @rentaoshima100-rgb
+
+# 仕様ファイル
+/kurimikan_pipeline_spec.md                        @rentaoshima100-rgb
+/kurimikan_prompt_suite_v1.md                      @rentaoshima100-rgb

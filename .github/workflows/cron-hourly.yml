@@ -1,0 +1,34 @@
+# 保護ファイル: .github/workflows/ の変更は代表の承認必須。自己改修の対象外。
+# 公開ワーカ: 承認済み+期日到来の記事を1件、Shopify (/blogs/column) へ公開する。
+name: cron-hourly (publish worker)
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: publish # 二重公開防止 (DB側もpublished/cancelledで排他)
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 公開ワーカ実行
+        env:
+          PIPELINE_ENV: production
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Shopifyカスタムアプリのトークン (スコープ write_content)
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          SITE_HOST: kuri-mikan.jp
+        run: npx tsx scripts/jobs/cron_hourly.ts

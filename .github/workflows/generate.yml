@@ -1,0 +1,44 @@
+# 保護ファイル: .github/workflows/ の変更は代表の承認必須。自己改修の対象外。
+# 2026-07-31 代表の要望により追加。管理画面の「今すぐ記事化」ボタンから起動する。
+#
+# なぜワークフローなのか:
+#   記事1本の生成に3〜6分かかる。サーバレス関数の実行時間上限 (最大でも数分) に収まらず、
+#   管理画面のサーバアクション内では完走できない。ここで走らせて結果だけDBに書く。
+#
+# 生成物は全件 approval_pending で承認キューに入る。このジョブは記事を公開しない
+# (公開の引き金は代表の承認ボタンのみ。v3の絶対ルール)。
+name: generate (承認済みトピックの記事化)
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "生成する本数の上限 (空なら承認済み全件)"
+        required: false
+        default: "3"
+
+concurrency:
+  # 同じ記事を二重生成しないよう直列化する。走行中の起動は待たせる
+  group: generate-queue
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # 1本3〜6分 × 上限本数 + 余裕
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 承認済みトピックを記事化
+        env:
+          PIPELINE_ENV: production
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MONTHLY_TOKEN_BUDGET_USD: ${{ vars.MONTHLY_TOKEN_BUDGET_USD }}
+        run: npx tsx scripts/generate_from_queue.ts --limit "${{ inputs.limit }}"

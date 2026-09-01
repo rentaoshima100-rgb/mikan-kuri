@@ -1,0 +1,7 @@
+{
+  "outbound": [
+    { "target": "/blogs/column/kanpei-storage", "anchor": "甘平の保存方法", "insert_hint": "費用相場のH2末尾" }
+  ],
+  "inbound": [],
+  "warnings": []
+}

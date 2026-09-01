@@ -1,0 +1,12 @@
+{
+  "sanitized_text": "<ORG_1>の案件で<PERSON_1>と要件を整理した。",
+  "additional_redactions": [
+    {
+      "original": "関西のレジャー施設の予約システム",
+      "generalized": "西日本のサービス業の業務システム",
+      "reason": "業種と地域の組み合わせで特定され得る"
+    }
+  ],
+  "risk_notes": [],
+  "human_review_required": false
+}

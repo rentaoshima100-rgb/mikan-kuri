@@ -1,0 +1,24 @@
+{
+  "angles": [
+    { "title": "地域×業種の格差", "finding": "地方の小規模企業で導入率の差が大きい", "surprise_level": 3 }
+  ],
+  "recommended": {
+    "angle_title": "地域×業種の格差",
+    "narrative_outline": ["発見の提示", "データ説明", "分析", "中小企業への示唆"],
+    "key_findings": ["導入率の地域差", "業種による偏り", "小規模ほど未着手"],
+    "chart_specs": [
+      {
+        "type": "bar",
+        "title": "地域別導入率",
+        "x_axis": "地域",
+        "series": [{ "name": "導入率", "values": [61.2, 48.9] }],
+        "caption": "地域別の導入率比較"
+      }
+    ]
+  },
+  "citation": "出典: 総務省『通信利用動向調査』（令和6年）",
+  "reference_date": "2026-07-01",
+  "numeric_claims": [
+    { "claim": "導入率は61.2%です", "source_cell": "table1:r2c3", "verified": true }
+  ]
+}

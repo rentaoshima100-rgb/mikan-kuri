@@ -1,0 +1,25 @@
+{
+  "titles": [
+    { "text": "ホームページリニューアル費用の考え方", "length": 19, "aim": "費用系クエリ" },
+    { "text": "サイトリニューアルの進め方ガイド", "length": 16, "aim": "手順系クエリ" },
+    { "text": "ホームページ刷新の判断基準", "length": 13, "aim": "検討初期層" },
+    { "text": "リニューアルで失敗しない要件整理", "length": 16, "aim": "失敗回避" },
+    { "text": "Web刷新の費用を左右する要因", "length": 15, "aim": "要因検索" }
+  ],
+  "meta_descriptions": [
+    { "text": "ホームページリニューアルの費用を左右する要因と進め方を実装者視点で解説します。", "length": 39, "aim": "費用+進め方" },
+    { "text": "リニューアルの判断基準と要件整理の手順を解説します。", "length": 26, "aim": "判断基準" },
+    { "text": "失敗例から学ぶリニューアルの進め方を紹介します。", "length": 24, "aim": "失敗回避" }
+  ],
+  "slugs": [
+    { "text": "homepage-renewal-cost", "aim": "費用系クエリの英訳を含む" },
+    { "text": "website-renewal-guide-cost", "aim": "手順+費用" },
+    { "text": "site-renewal-price-factors", "aim": "変動要因" }
+  ],
+  "recommended": {
+    "title_index": 0,
+    "meta_index": 0,
+    "slug_index": 0,
+    "reason": "主KW前方配置で意図に合致"
+  }
+}

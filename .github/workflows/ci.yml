@@ -1,0 +1,56 @@
+# 保護ファイル: このワークフローを含む .github/workflows/ の変更は代表の承認必須。
+# 自己改修 (SelfHealingCoder) の変更対象にしてはならない。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # 実APIを呼ばない。全テストは dry_run で完結すること (v3 進め方ルール)
+      PIPELINE_ENV: dry_run
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  protected-files:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 保護ファイル変更検知
+        env:
+          # origin/<base_ref> はPRのcheckoutで作られないことがあるため、
+          # GitHubが提供するbase SHAを使う (解決できずに全PRが落ちるのを防ぐ)
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_SHA" 2>/dev/null || true
+          CHANGED=$(git diff --name-only "$BASE_SHA" HEAD)
+          # CODEOWNERS と同じ集合を維持すること (tests/protected_paths.test.ts が両者の一致を検証)
+          PROTECTED='^(CODEOWNERS|\.github/workflows/|scripts/jobs/|packages/pipeline/src/tripwire/|packages/pipeline/src/approvals/|packages/pipeline/src/publish/|kurimikan_prompt_suite_v1\.md|kurimikan_pipeline_spec\.md|packages/pipeline/src/quality/compliance_gate\.ts)'
+          HITS=$(echo "$CHANGED" | grep -E "$PROTECTED" || true)
+          if [ -n "$HITS" ]; then
+            echo "::warning::保護ファイルが変更されています (CODEOWNERSレビュー必須):"
+            echo "$HITS"
+            if [ "$ACTOR" != "rentaoshima100-rgb" ]; then
+              echo "::error::保護ファイルは代表 (@rentaoshima100-rgb) 以外変更できません"
+              exit 1
+            fi
+          else
+            echo "保護ファイルへの変更なし"
+          fi

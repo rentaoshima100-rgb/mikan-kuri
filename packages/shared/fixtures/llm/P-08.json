@@ -1,0 +1,21 @@
+{
+  "article_seeds": [
+    {
+      "seed_title": "RAGの回答精度を上げる前処理の実務",
+      "angle": "実装でハマった点を一次情報として書く",
+      "cluster": "AI・LLMO",
+      "target_keyword_hint": "RAG 精度改善",
+      "source_excerpt": "<PROJECT_1>でチャンク分割を見直した",
+      "sensitivity": "low"
+    }
+  ],
+  "primary_info_candidates": [
+    {
+      "content": "チャンク分割の見直しで検索一致率が改善した実測",
+      "info_type": "実測",
+      "applicable_clusters": ["AI・LLMO"],
+      "sensitivity": "low"
+    }
+  ],
+  "queue_boosts": [{ "keyword": "ホームページ リニューアル", "reason": "今週の問い合わせと関連が強い" }]
+}

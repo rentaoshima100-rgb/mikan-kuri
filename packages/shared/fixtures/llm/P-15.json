@@ -1,0 +1,13 @@
+{
+  "impact": "minor",
+  "proposed_changes": [
+    {
+      "tier": 1,
+      "target": "P-00のllmoセクション",
+      "change": "定義文の位置に関する指示を強化する",
+      "rationale": "AI検索での引用率に影響するため",
+      "urgency": "normal"
+    }
+  ],
+  "monitoring_suggestion": "2週間、対象記事のインデックス率を観測する"
+}

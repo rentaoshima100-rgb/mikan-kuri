@@ -1,0 +1,43 @@
+{
+  "name": "kurimikan-pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed:prompts": "tsx scripts/seed/seed_prompts.ts",
+    "seed:config": "tsx scripts/seed/seed_config.ts",
+    "seed:assets": "tsx scripts/seed/seed_assets.ts",
+    "propose:keywords": "tsx scripts/propose_keywords.ts",
+    "generate:queue": "tsx scripts/generate_from_queue.ts",
+    "research:topic": "tsx scripts/research_topic.ts",
+    "run:strategy": "tsx scripts/run_strategy.ts",
+    "run:seo-watcher": "tsx scripts/run_seo_watcher.ts",
+    "shopify:bootstrap-blog": "tsx scripts/shopify/bootstrap_blog.ts",
+    "refit:batch": "tsx scripts/refit_batch.ts",
+    "dedup:sweep": "tsx scripts/dedup_sweep.ts",
+    "rank:watch": "tsx scripts/rank_watch.ts"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.49.0",
+    "@types/node": "^22.13.0",
+    "eslint": "^9.20.0",
+    "prettier": "^3.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^3.0.0",
+    "zod": "^3.24.0"
+  }
+}

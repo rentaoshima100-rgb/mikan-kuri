@@ -1,0 +1,24 @@
+{
+  "summary_5min": [
+    "リニューアル系のクリックが増加。ピラー記事への内部導線が効いている",
+    "表示はあるがCTRが低い記事が3本。title改善を指名した",
+    "インデックス率は85%を維持。増速ゲートは1条件のみ充足"
+  ],
+  "what_worked": [
+    { "finding": "ピラー記事経由の回遊増", "evidence": "gsc: クリック前月比+20%", "action": "同クラスタの内部リンクを強化" }
+  ],
+  "what_failed": [
+    { "finding": "CTR低迷が3本", "evidence": "gsc: 表示1000超でCTR<1.5%", "action": "リライト指名" }
+  ],
+  "decisions": [
+    { "type": "rewrite", "detail": "CTR低迷3本をリライト対象に指名", "rationale": "gscのCTRデータに基づく" }
+  ],
+  "proposals": [],
+  "next_month_targets": {
+    "publish_count": 9,
+    "lane_b_ratio": 0.5,
+    "rewrite_count": 3,
+    "focus_cluster": "renewal"
+  },
+  "uncertainty_flags": ["90日遅行指標はデータ蓄積中のため判断保留"]
+}

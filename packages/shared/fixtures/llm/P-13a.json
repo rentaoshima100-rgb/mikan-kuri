@@ -1,0 +1,9 @@
+{
+  "diagnosis": { "primary_issue": "ctr", "evidence": "表示は多いがCTRが1%台に留まる" },
+  "add_sections": [],
+  "add_faq": [{ "q": "リニューアルの期間はどれくらい？", "source_query": "リニューアル 期間" }],
+  "inject_primary_info": [],
+  "remove": [],
+  "title_meta_update": { "needed": true, "direction": "数字と年号で具体化する" },
+  "expected_impact": "CTRの改善が見込める"
+}

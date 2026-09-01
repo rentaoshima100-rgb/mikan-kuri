@@ -1,0 +1,42 @@
+# 保護ファイル: .github/workflows/ の変更は代表の承認必須。自己改修の対象外。
+# 管理画面の「今すぐ公開」ボタンから起動する。
+#
+# なぜ必要か:
+#   公開は cron-hourly (毎時) に任せる設計だが、GitHubのスケジュール実行は遅延が大きく、
+#   実測では平均149分・最長265分の間隔だった。承認してから数時間サイトに出ないのは
+#   運用として成立しない。承認直後に人が起動できる経路を用意する。
+#
+# 中身は cron-hourly と同一 (同じ publish worker を同じ手順で呼ぶ)。
+# 公開されるのは既に代表が承認した記事だけで、このジョブが承認を代行することはない。
+# 未解決のhaltトリップワイヤ・デッドマン期限切れ・法令ゲートの判定もそのまま効く。
+name: publish-now (承認済み記事を今すぐ公開)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  # cron-hourly と同じグループにして、公開処理が二重に走らないようにする
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 公開ワーカ実行
+        env:
+          PIPELINE_ENV: production
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}
+          SITE_HOST: kuri-mikan.jp
+        run: npx tsx scripts/jobs/cron_hourly.ts

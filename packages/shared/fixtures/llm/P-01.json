@@ -1,0 +1,29 @@
+{
+  "search_intent_analysis": {
+    "type": "Know",
+    "reader_wants": ["費用相場を知りたい", "失敗しない進め方", "期間の目安"],
+    "reader_level": "初学者"
+  },
+  "title_draft": "ホームページリニューアルの費用相場と進め方",
+  "outline": [
+    {
+      "h2": "ホームページリニューアルの費用相場は？",
+      "answer_first": "費用は案件の規模と要件により変動します。",
+      "h3": ["費用を左右する要因"],
+      "uses_primary_info": false
+    },
+    {
+      "h2": "リニューアルの進め方は？",
+      "answer_first": "現状分析から始めるのが最短です。",
+      "h3": [],
+      "uses_primary_info": false
+    }
+  ],
+  "primary_info_plan": [],
+  "faq_candidates": ["費用はいくら？", "期間は？", "何から始める？", "業者の選び方は？", "失敗例は？"],
+  "cannibalization_risk": [],
+  "lane_b_eligible": true,
+  "lane_b_reason": "",
+  "approval_required": true,
+  "estimated_word_count": 4000
+}

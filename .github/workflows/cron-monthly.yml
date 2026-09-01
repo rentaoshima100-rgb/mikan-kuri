@@ -1,0 +1,32 @@
+# 保護ファイル: .github/workflows/ の変更は代表の承認必須。自己改修の対象外。
+# GA4同期 (AIチャネル/リファラ集計 → ai_cv_events)。
+# e-Stat同期・相場レポート・月次戦略エージェントはSprint 1以降に追加する。
+name: cron-monthly (GA4 + AI CV)
+
+on:
+  schedule:
+    - cron: "0 22 1 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: cron-monthly
+  cancel-in-progress: false
+
+jobs:
+  monthly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 月次ジョブ実行
+        env:
+          PIPELINE_ENV: production
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+        run: npx tsx scripts/jobs/cron_monthly.ts

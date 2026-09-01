@@ -1,0 +1,70 @@
+[
+  {
+    "asset_type": "measurement",
+    "title": "2026年1月に収穫した甘平の糖度実測",
+    "description": "選果場の屈折計で測った、その年の甘平の糖度。甘平の品種記事・食べ頃の記事に使える一次情報。",
+    "content": "2026年1月15日に収穫した甘平を選果場で測ったところ、糖度は平均◯度でした（40玉を測定）。収穫を数日ずらすと数値が変わるため、当店では糖度と酸度の両方を見て、食べ頃に入ったものから順に出荷しています。",
+    "numeric_claims": [
+      {
+        "claim": "2026年1月収穫の甘平の平均糖度",
+        "value": "◯",
+        "unit": "度",
+        "basis": "自社選果場の屈折計による実測、2026-01-15、n=40",
+        "verified": true
+      }
+    ],
+    "applicable_clusters": ["citrus_variety", "eating"],
+    "sensitivity": "low",
+    "source_permission": true,
+    "valid_until": "2026-12-31"
+  },
+  {
+    "asset_type": "weather",
+    "title": "2025年秋から2026年冬の天候と柑橘の生育",
+    "description": "その年の天候が実の仕上がりにどう出たか。旬・収穫時期の記事で「今年は」と書くときの根拠。",
+    "content": "2025年の秋は雨が少なく、11月に入っても気温が高い日が続きました。宇和島市吉田町の当園では、色づきが例年より◯日ほど遅れた一方で、実の締まりは良い年でした。収穫の開始は例年より遅らせています。",
+    "numeric_claims": [
+      {
+        "claim": "色づきの例年差",
+        "value": "◯",
+        "unit": "日",
+        "basis": "当園の収穫開始日の記録（2021年〜2025年の平均との比較）",
+        "verified": true
+      }
+    ],
+    "applicable_clusters": ["growing", "citrus_variety"],
+    "sensitivity": "low",
+    "source_permission": true,
+    "valid_until": "2026-09-30"
+  },
+  {
+    "asset_type": "process",
+    "title": "出荷前の選別基準",
+    "description": "どういう基準で選り分けているか。訳あり品の記事、価格の記事で「なぜこの値段か」を説明するのに使う。",
+    "content": "当店では、収穫した実を（サイズ・見た目・糖度など、実際に見ている基準を具体的に）で選り分けています。見た目に傷があるもの、サイズが不揃いなものは訳あり品として、味に問題がないことを確認したうえで別の価格でお出ししています。",
+    "numeric_claims": [],
+    "applicable_clusters": ["eating", "gift", "citrus_variety"],
+    "sensitivity": "low",
+    "source_permission": true
+  },
+  {
+    "asset_type": "field_record",
+    "title": "宇和海に面した段々畑での栽培",
+    "description": "畑の立地と、そこで何をしているか。産地の記事の骨格になる。年をまたいで変わらないので有効期限なし。",
+    "content": "当園の畑は愛媛県宇和島市吉田町の、宇和海に面した斜面にあります。（作業の実際、斜面での運搬、日当たりと海からの照り返し、いつ何をするかを具体的に。「無農薬」「減農薬」「有機」「オーガニック」は表示できないため使わない。栽培の話は、確認できる作業内容で書く）",
+    "numeric_claims": [],
+    "applicable_clusters": ["growing"],
+    "sensitivity": "low",
+    "source_permission": true
+  },
+  {
+    "asset_type": "customer_voice",
+    "title": "毎年この時期に必ず聞かれること",
+    "description": "問い合わせで実際に多い質問。記事のネタと、FAQの元になる。個人が特定できる記述は書かない。",
+    "content": "出荷が始まる時期になると、「いつごろ届きますか」「どれくらい日持ちしますか」「贈答用にのしは付けられますか」というお問い合わせを毎年いただきます。（それぞれに対する当店の回答を、事実として書く）",
+    "numeric_claims": [],
+    "applicable_clusters": ["eating", "gift"],
+    "sensitivity": "low",
+    "source_permission": true
+  }
+]

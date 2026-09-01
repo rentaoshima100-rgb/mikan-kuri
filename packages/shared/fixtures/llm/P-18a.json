@@ -1,0 +1,18 @@
+{
+  "asset_type": "public_data_analysis",
+  "title": "通信利用動向調査にみる中小企業のWeb活用",
+  "description": "公的統計から地域×業種の導入率格差を整理した分析素材",
+  "content": "総務省の統計によると導入率には地域差がある。",
+  "numeric_claims": [
+    {
+      "claim": "導入率は61.2%です",
+      "source": "総務省『通信利用動向調査』（令和6年）",
+      "verified": true,
+      "verified_date": "2026-07-01"
+    }
+  ],
+  "applicable_clusters": ["renewal", "production"],
+  "valid_until": "2027-06-30",
+  "annual_review": false,
+  "sensitivity": "low"
+}

@@ -1,0 +1,9 @@
+{
+  "source_type": "official",
+  "change_type": "algorithm",
+  "confidence": "high",
+  "importance": 8,
+  "affected_area": ["publish_strategy"],
+  "summary_one_line": "コアアップデートの展開が公式に告知された",
+  "corroboration_needed": false
+}

@@ -1,0 +1,48 @@
+{
+  "period": "2026-07",
+  "total_n": 12,
+  "aggregates": {
+    "budget_distribution": [
+      {
+        "band": "50万円以下",
+        "count": 7,
+        "pct": 58.3
+      }
+    ],
+    "budget_mean": 62,
+    "budget_median": 45,
+    "top_requirements": [
+      {
+        "tag": "cms",
+        "count": 6,
+        "pct": 50.0
+      }
+    ],
+    "loss_reasons": [
+      {
+        "tag": "price",
+        "count": 5,
+        "pct": 41.7
+      }
+    ],
+    "by_segment": []
+  },
+  "vs_previous": [],
+  "numeric_claims": [
+    {
+      "claim": "当社が受領した発注要望12件のうち50万円以下が58.3%でした",
+      "numerator": 7,
+      "denominator": 12,
+      "verified": true
+    }
+  ],
+  "suggested_headlines": [
+    "中小企業のWeb制作予算の実態"
+  ],
+  "excluded_cells": [
+    {
+      "cell": "by_industry",
+      "reason": "n<5"
+    }
+  ]
+}

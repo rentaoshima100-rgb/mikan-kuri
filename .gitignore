@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.next/
+*.tsbuildinfo
+
+# 実名・案件情報を含みうる一次情報の実データ (Supabaseにのみ入れる。リポジトリにコミットしない)
+.local/
+.env
+.env.local
+*.log
+.DS_Store
+.vercel/
+
+.vercel
+.env*
