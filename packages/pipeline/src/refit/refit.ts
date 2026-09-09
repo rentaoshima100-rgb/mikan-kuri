@@ -179,6 +179,7 @@ export async function refitArticle(entry: RefitEntry, deps: RefitDeps): Promise<
     topic: entry.title,
     limit: 3,
     articleId: article.id,
+    asOf: deps.now?.(),
   });
   const directiveBlock = buildDirectiveBlock(deps.directives?.[entry.slug]);
   const p13a = await getPrompt("P-13a", store.getPromptFromDb.bind(store), deps.suitePath);

@@ -65,14 +65,15 @@ export class MemoryStore implements Store {
   addAsset(partial: Partial<PrimaryAssetRow>): PrimaryAssetRow {
     const row: PrimaryAssetRow = {
       id: nextId(),
-      asset_type: "public_data_analysis",
+      asset_type: "measurement",
       title: "asset",
       description: "desc",
       content: "content",
       numeric_claims: [],
-      applicable_clusters: ["renewal"],
+      applicable_clusters: ["citrus_variety"],
       usage_count: 0,
       status: "active",
+      valid_until: null,
       ...partial,
     };
     this.assets.push(row);
@@ -139,9 +140,15 @@ export class MemoryStore implements Store {
     return [...this.articles.values()].map((a) => a.slug).filter((s): s is string => !!s);
   }
 
-  async listActiveAssetsByCluster(cluster: string, limit: number) {
+  async listActiveAssetsByCluster(cluster: string, limit: number, asOf: Date = new Date()) {
+    const today = asOf.toISOString().slice(0, 10);
     return this.assets
-      .filter((a) => a.status === "active" && a.applicable_clusters.includes(cluster))
+      .filter(
+        (a) =>
+          a.status === "active" &&
+          a.applicable_clusters.includes(cluster) &&
+          (a.valid_until == null || a.valid_until >= today),
+      )
       .sort((a, b) => a.usage_count - b.usage_count)
       .slice(0, limit);
   }

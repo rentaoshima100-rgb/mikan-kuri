@@ -180,6 +180,7 @@ export async function generateArticle(
     topic: keyword.keyword,
     limit: 3,
     articleId: article.id,
+    asOf: deps.now?.(),
   });
 
   // クラウド下書き (代表指示 2026-08-20): サブスク側のClaude Codeルーチンが
@@ -328,6 +329,7 @@ export async function continueFromGate(
     topic: keyword.keyword,
     limit: 3,
     articleId: article.id,
+    asOf: deps.now?.(),
   });
 
   if (article.lane === "B") {

@@ -96,12 +96,20 @@ export class SupabaseStore implements Store {
     return ((this.ok(res, "listSlugs") ?? []) as Array<{ slug: string }>).map((r) => r.slug);
   }
 
-  async listActiveAssetsByCluster(cluster: string, limit: number): Promise<PrimaryAssetRow[]> {
+  async listActiveAssetsByCluster(
+    cluster: string,
+    limit: number,
+    asOf: Date = new Date(),
+  ): Promise<PrimaryAssetRow[]> {
+    // 期限切れの一次情報を記事に混入させない。valid_until が null のものは期限なし
+    // (畑の場所、選別基準など年をまたいで変わらない情報) なので残す
+    const today = asOf.toISOString().slice(0, 10);
     const res = await this.sb
       .from("primary_info_assets")
       .select("*")
       .eq("status", "active")
       .contains("applicable_clusters", [cluster])
+      .or(`valid_until.is.null,valid_until.gte.${today}`)
       .order("usage_count", { ascending: true })
       .limit(limit);
     return (this.ok(res, "listActiveAssetsByCluster") ?? []) as PrimaryAssetRow[];

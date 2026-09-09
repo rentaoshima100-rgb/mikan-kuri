@@ -26,6 +26,8 @@ export interface SelectAssetsInput {
   topic: string;
   limit: number;
   articleId?: string;
+  // 有効期限の判定基準日 (省略時は現在)。期限切れの一次情報は候補に入らない
+  asOf?: Date;
 }
 
 function parseIndexes(text: string, max: number): number[] {
@@ -48,8 +50,8 @@ function parseIndexes(text: string, max: number): number[] {
 }
 
 export async function selectRelevantAssets(input: SelectAssetsInput): Promise<PrimaryAssetRow[]> {
-  const { store, llm, cluster, topic, limit, articleId } = input;
-  const pool = await store.listActiveAssetsByCluster(cluster, CANDIDATE_POOL);
+  const { store, llm, cluster, topic, limit, articleId, asOf } = input;
+  const pool = await store.listActiveAssetsByCluster(cluster, CANDIDATE_POOL, asOf);
   // 候補が枠に収まるなら選ぶ余地がない。LLMを呼ばずそのまま返す
   if (pool.length <= limit) return pool;
 

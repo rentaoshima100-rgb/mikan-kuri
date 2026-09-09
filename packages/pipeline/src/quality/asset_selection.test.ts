@@ -97,3 +97,73 @@ describe("selectRelevantAssets", () => {
     expect(res).toEqual([]);
   });
 });
+
+describe("selectRelevantAssets: 一次情報の有効期限", () => {
+  // 柑橘は年ごとに出来が変わる。去年の糖度を今年の記事に使うと事実と違う記述になる。
+  // 人が本文を読んでいれば気づくが、全自動公開では気づけないのでここで機械的に落とす
+  const asOf = new Date("2026-09-08T00:00:00Z");
+
+  function storeWithExpiry() {
+    const store = new MemoryStore();
+    store.addAsset({ title: "期限なし (畑の場所)", applicable_clusters: ["kanpei"] });
+    store.addAsset({
+      title: "今季の糖度",
+      applicable_clusters: ["kanpei"],
+      valid_until: "2026-12-31",
+    });
+    store.addAsset({
+      title: "昨季の糖度",
+      applicable_clusters: ["kanpei"],
+      valid_until: "2026-03-31",
+    });
+    return store;
+  }
+
+  it("期限を過ぎた資産は候補に入らない", async () => {
+    const res = await selectRelevantAssets({
+      store: storeWithExpiry(),
+      llm: llmThrowing(),
+      cluster: "kanpei",
+      topic: "甘平の糖度",
+      limit: 3,
+      asOf,
+    });
+    expect(res.map((a) => a.title)).toEqual(["期限なし (畑の場所)", "今季の糖度"]);
+  });
+
+  it("期限当日はまだ有効 (境界)", async () => {
+    const store = new MemoryStore();
+    store.addAsset({
+      title: "今日まで",
+      applicable_clusters: ["kanpei"],
+      valid_until: "2026-09-08",
+    });
+    const res = await selectRelevantAssets({
+      store,
+      llm: llmThrowing(),
+      cluster: "kanpei",
+      topic: "甘平",
+      limit: 3,
+      asOf,
+    });
+    expect(res.map((a) => a.title)).toEqual(["今日まで"]);
+  });
+
+  it("asOf を渡さなければ現在時刻で判定する", async () => {
+    const store = new MemoryStore();
+    store.addAsset({
+      title: "遠い未来まで有効",
+      applicable_clusters: ["kanpei"],
+      valid_until: "2999-12-31",
+    });
+    store.addAsset({ title: "とうに期限切れ", applicable_clusters: ["kanpei"], valid_until: "2020-01-01" });
+    const res = await selectRelevantAssets({
+      store,
+      llm: llmThrowing(),
+      cluster: "kanpei",
+      topic: "甘平",
+      limit: 3,
+    });
+    expect(res.map((a) => a.title)).toEqual(["遠い未来まで有効"]);
+  });
+});

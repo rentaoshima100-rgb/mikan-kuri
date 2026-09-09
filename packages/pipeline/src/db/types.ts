@@ -161,6 +161,10 @@ export interface PrimaryAssetRow {
   applicable_clusters: string[];
   usage_count: number;
   status: string;
+  // 鮮度が切れる日 (YYYY-MM-DD)。nullは期限なし。
+  // 柑橘は年ごとに出来が変わるので、その年の収穫に関する実測値には必ず入れる。
+  // 期限を過ぎた資産は listActiveAssetsByCluster が返さない (記事に混入させない)
+  valid_until?: string | null;
 }
 
 export interface PrimaryAssetInsert {
@@ -216,7 +220,13 @@ export interface Store {
   listArticleSummaries(excludeId?: string): Promise<ArticleSummary[]>;
   listSlugs(): Promise<string[]>;
 
-  listActiveAssetsByCluster(cluster: string, limit: number): Promise<PrimaryAssetRow[]>;
+  // asOf 時点で有効な資産のみを返す (valid_until が null か asOf 以降)。
+  // 全自動公開では人が本文を読まないため、期限切れをここで機械的に落とす
+  listActiveAssetsByCluster(
+    cluster: string,
+    limit: number,
+    asOf?: Date,
+  ): Promise<PrimaryAssetRow[]>;
   insertPrimaryAsset(asset: PrimaryAssetInsert): Promise<PrimaryAssetRow>;
   // 使用回数の加算。選抜は usage_count 昇順なので、加算しないと同じ資産が使われ続ける
   incrementAssetUsage(assetIds: string[]): Promise<void>;
