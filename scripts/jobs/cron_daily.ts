@@ -17,7 +17,7 @@
 //   自動承認は生成の後。安全装置は生成の結果も見たいので最後。
 import { join } from "node:path";
 import {
-  AnthropicResearchClient,
+  makeResearchClient,
   autoApproveAllPending,
   deadmanSweep,
   generateFromQueue,
@@ -40,13 +40,22 @@ const BUDGET_USD = Number(process.env.MONTHLY_TOKEN_BUDGET_USD ?? 60);
 
 // 1日あたりの上限。予算と、代表がレビューできる量の両方に効く。
 // 承認キューに積みすぎると代表が読み切れず、デッドマンで保留に戻るだけになる。
+// LLM系ステップ (発案/リサーチ/生成/SEO監視 + 自動キュー/自動承認) の実行スイッチ。
+// サブスク実行への変換後、これらは日次ルーチン (scripts/jobs/routine_daily.ts、
+// claude.ai/code/routines) 側で走る。cron-daily (GitHub Actions) は DAILY_LLM_STEPS=off で
+// 計測と安全装置だけを担い、ルーチンが止まっても tripwire/deadman は独立に動き続ける。
+// 未設定なら従来どおり全ステップ実行 (ローカル実行やAPIキー経路のフォールバック用)。
+const LLM_STEPS_ENABLED = process.env.DAILY_LLM_STEPS !== "off";
+
 const PROPOSE_PER_DAY = Number(process.env.DAILY_PROPOSE_COUNT ?? 4);
 const GENERATE_PER_DAY = Number(process.env.DAILY_GENERATE_LIMIT ?? 2);
 const RESEARCH_PER_DAY = Number(process.env.DAILY_RESEARCH_LIMIT ?? 2);
 
 await runJob("cron-daily", async (store: Store) => {
   const results: Record<string, unknown> = {};
-  const llm = await makeLLMClient(store);
+  // DAILY_LLM_STEPS=off ではAPIキーが無くてもジョブ全体を落とさないよう構築しない
+  // (AnthropicのSDKはキー未設定だと構築時に例外を投げる)。使用箇所はすべて ifLlm の内側
+  const llm = LLM_STEPS_ENABLED ? await makeLLMClient(store) : (null as never);
 
   // 重複判定の相手に、DBが追跡していない記事 (店舗が /blogs/news に手で投稿した
   // お知らせなど) を加える。トークン未設定なら相手はDBの記事だけになる
@@ -87,13 +96,17 @@ await runJob("cron-daily", async (store: Store) => {
     const done: { topic: string; cluster: string; asset: string | null }[] = [];
     for (const kw of queued.slice(0, RESEARCH_PER_DAY)) {
       const { asset } = await researchTopicToAsset(
-        { store, llm, research: new AnthropicResearchClient(), suitePath: SUITE_PATH },
+        { store, llm, research: makeResearchClient(), suitePath: SUITE_PATH },
         { topic: kw.keyword, cluster: kw.cluster },
       );
       done.push({ topic: kw.keyword, cluster: kw.cluster, asset: asset?.id ?? null });
     }
     return done;
   };
+
+  // DAILY_LLM_STEPS=off のとき、LLM系ステップはルーチン側に任せてスキップする
+  const routineSide = async () => ({ skipped: "DAILY_LLM_STEPS=off (routine_daily側で実行)" });
+  const ifLlm = (fn: () => Promise<unknown>) => (LLM_STEPS_ENABLED ? fn : routineSide);
 
   for (const [name, fn] of [
     ["gsc_sync", () => runGscSync({ store })],
@@ -102,7 +115,7 @@ await runJob("cron-daily", async (store: Store) => {
     // 発案。既定では proposed で止まる (代表が承認するまで記事化されない)
     [
       "propose_keywords",
-      async () =>
+      ifLlm(async () =>
         proposeKeywords(
           {
             store,
@@ -112,17 +125,18 @@ await runJob("cron-daily", async (store: Store) => {
           },
           { count: PROPOSE_PER_DAY },
         ),
+      ),
     ],
     // 全自動時のみ: proposed → queued (同日にリサーチ・生成が拾えるよう発案直後)
-    ["auto_queue_topics", autoQueueTopics],
+    ["auto_queue_topics", ifLlm(autoQueueTopics)],
     // 承認済み (queued) トピックの一次情報を集める (出典が取れなければ資産を作らない)
-    ["research", researchQueued],
+    ["research", ifLlm(researchQueued)],
     // queued トピックを記事化。既定は approval_pending で承認キューへ、
     // 全自動時は品質ゲート結果に関わらず承認キューへ (次のauto_approveで公開予定に乗る)
-    ["generate", () => generateFromQueue(orchestratorDeps, { limit: GENERATE_PER_DAY })],
+    ["generate", ifLlm(() => generateFromQueue(orchestratorDeps, { limit: GENERATE_PER_DAY }))],
     // 全自動時のみ: 承認待ちを自動承認+即時公開の予定に (実公開はcron-hourly)
-    ["auto_approve", autoApprove],
-    ["seo_watcher", () => runSeoWatcher({ store, llm, suitePath: SUITE_PATH })],
+    ["auto_approve", ifLlm(autoApprove)],
+    ["seo_watcher", ifLlm(() => runSeoWatcher({ store, llm, suitePath: SUITE_PATH }))],
     ["tripwire", () => runTripwireSweep({ store })],
     ["deadman", () => deadmanSweep({ store })],
   ] as const) {

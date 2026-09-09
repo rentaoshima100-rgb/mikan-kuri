@@ -2,11 +2,12 @@
 //   npx tsx scripts/propose_keywords.ts [--cluster renewal] [--count 8]
 // 発案器が既存記事の穴からトピック案を生成し、status='proposed' で積む。
 // 代表は管理画面の「トピック提案」で承認 (queued) / 却下する。公開はされない。
-// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + ANTHROPIC_API_KEY (PIPELINE_ENV != dry_run)。
+// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + LLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)。
 import { join } from "node:path";
 import {
   dataForSeoCredsFromEnv,
   fetchSearchVolumes,
+  llmConfigured,
   makeLLMClient,
   proposeKeywords,
   SupabaseStore,
@@ -31,12 +32,14 @@ async function main() {
   const configured =
     process.env.SUPABASE_URL &&
     process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    process.env.ANTHROPIC_API_KEY &&
+    llmConfigured() &&
     process.env.PIPELINE_ENV !== "dry_run";
   if (!configured) {
     console.log("[plan] キー未設定またはdry_runのため実行しません。");
     console.log(`  発案予定: ${cluster ?? "全クラスタ"} / ${count}件`);
-    console.log("実行にはSUPABASE_URL/SERVICE_ROLE_KEY/ANTHROPIC_API_KEYとPIPELINE_ENV=productionが必要です");
+    console.log(
+      "実行にはSUPABASE_URL/SERVICE_ROLE_KEYとLLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)、PIPELINE_ENV=productionが必要です",
+    );
     return;
   }
 

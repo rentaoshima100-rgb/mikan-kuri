@@ -1,7 +1,13 @@
 # 保護ファイル: .github/workflows/ の変更は代表の承認必須。自己改修の対象外。
-# GSC同期 → 順位監視 → 発案 → リサーチ → 生成 → SEO監視 → トリップワイヤ → デッドマンスイープ。
-# 生成物はすべて承認キューで止まり、このジョブは記事を公開しない (絶対ルール)。
-name: cron-daily (autonomous loop + metrics + tripwire)
+#
+# サブスク実行 (Routines) への変換により、LLM系ステップ (発案→リサーチ→生成→SEO監視) は
+# 日次ルーチン (claude.ai/code/routines、scripts/jobs/routine_daily.ts) 側で実行する。
+# ここでは DAILY_LLM_STEPS=off でスキップし、計測と安全装置だけを担う。
+# ルーチンが止まっても tripwire/deadman は独立に動き続ける。docs/ROUTINES.md 参照。
+#
+# GSC同期 → 順位監視 → トリップワイヤ → デッドマンスイープ。
+# 生成はルーチン側でも承認キューで止まり、このジョブは記事を公開しない (絶対ルール)。
+name: cron-daily (metrics + tripwire)
 
 on:
   schedule:
@@ -22,25 +28,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: 日次ジョブ実行
+      - name: 日次ジョブ実行 (計測 + 安全装置)
         env:
           PIPELINE_ENV: production
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
-          # 順位監視 (rank_watch) とSERP差分チェックが使う。未登録ならどちらもスキップされる
+          # 順位監視 (rank_watch) が使う。未登録ならスキップされる
           DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
           DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
-          MONTHLY_TOKEN_BUDGET_USD: ${{ vars.MONTHLY_TOKEN_BUDGET_USD }}
-          # 発案(P-15)・リサーチ・生成・SEOウォッチャーがLLMを呼ぶ。
-          # これが無いとSEOウォッチャーは毎日失敗する (追加前はその状態だった)
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # 1日あたりの上限。予算と、代表がレビューできる量の両方を抑える
-          # 発案の重複判定が、店舗が手で投稿した記事も相手にできるようにする。
-          # 未設定だとDB追跡分だけが相手になり、その差の分だけカニバリを見逃す
-          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
-          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
-          DAILY_PROPOSE_COUNT: "4"
-          DAILY_RESEARCH_LIMIT: "2"
-          DAILY_GENERATE_LIMIT: "2"
+          # LLM系ステップは日次ルーチン (サブスク実行) 側で走らせるためここでは切る
+          DAILY_LLM_STEPS: "off"
         run: npx tsx scripts/jobs/cron_daily.ts

@@ -1,9 +1,14 @@
 // SEOウォッチャー P-14 実行CLI (v3 Sprint 2)。
 //   npx tsx scripts/run_seo_watcher.ts
 // RSSフィードを取得し新着をP-14で分類してseo_knowledgeに蓄積。P-16戦略の入力になる。
-// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + ANTHROPIC_API_KEY (PIPELINE_ENV != dry_run)。
+// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + LLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)。
 import { join } from "node:path";
-import { makeLLMClient, runSeoWatcher, SupabaseStore } from "@kurimikan/pipeline";
+import {
+  llmConfigured,
+  makeLLMClient,
+  runSeoWatcher,
+  SupabaseStore,
+} from "@kurimikan/pipeline";
 
 const SUITE_PATH = join(import.meta.dirname, "..", "kurimikan_prompt_suite_v1.md");
 
@@ -11,7 +16,7 @@ async function main() {
   const configured =
     process.env.SUPABASE_URL &&
     process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    process.env.ANTHROPIC_API_KEY &&
+    llmConfigured() &&
     process.env.PIPELINE_ENV !== "dry_run";
   if (!configured) {
     console.log("[plan] キー未設定またはdry_runのため実行しません。");

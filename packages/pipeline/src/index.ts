@@ -3,6 +3,7 @@ export * from "./db/types.js";
 export * from "./db/memory.js";
 export * from "./db/supabase.js";
 export * from "./orchestrator/generate.js";
+export * from "./orchestrator/gate_continue.js";
 export * from "./quality/notation.js";
 export * from "./quality/duplicate_gate.js";
 export * from "./quality/compliance_gate.js";

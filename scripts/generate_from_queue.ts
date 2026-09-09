@@ -2,9 +2,15 @@
 //   npx tsx scripts/generate_from_queue.ts [--limit 2]
 // 承認済み (status='queued') のキーワードを優先度順に記事化し、承認キューへ積む。
 // 公開はされない (記事は approval_pending / gate_pending で止まる)。自動公開は存在しない。
-// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + ANTHROPIC_API_KEY (PIPELINE_ENV != dry_run)。
+// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + LLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)。
 import { join } from "node:path";
-import { generateFromQueue, makeLLMClient, SupabaseStore } from "@kurimikan/pipeline";
+import {
+  generateFromQueue,
+  llmBudgetUsd,
+  llmConfigured,
+  makeLLMClient,
+  SupabaseStore,
+} from "@kurimikan/pipeline";
 
 const args = process.argv.slice(2);
 const argOf = (n: string) => {
@@ -19,11 +25,13 @@ async function main() {
   const configured =
     process.env.SUPABASE_URL &&
     process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    process.env.ANTHROPIC_API_KEY &&
+    llmConfigured() &&
     process.env.PIPELINE_ENV !== "dry_run";
   if (!configured) {
     console.log("[plan] キー未設定またはdry_runのため実行しません。");
-    console.log("実行にはSUPABASE_URL/SERVICE_ROLE_KEY/ANTHROPIC_API_KEYとPIPELINE_ENV=productionが必要です");
+    console.log(
+      "実行にはSUPABASE_URL/SERVICE_ROLE_KEYとLLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)、PIPELINE_ENV=productionが必要です",
+    );
     return;
   }
 
@@ -37,7 +45,7 @@ async function main() {
 
   const llm = await makeLLMClient(store);
   const r = await generateFromQueue(
-    { store, llm, suitePath: SUITE_PATH, budgetUsd: Number(process.env.MONTHLY_TOKEN_BUDGET_USD ?? 60) },
+    { store, llm, suitePath: SUITE_PATH, budgetUsd: llmBudgetUsd() },
     { limit },
   );
 

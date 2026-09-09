@@ -1,13 +1,20 @@
 // 既存記事の改修バッチ実行CLI。対象は公開済み記事 (articles.body_mdx)。
 //   npx tsx scripts/refit_batch.ts [--limit N] [--slug <slug>]... [--plan] [--redo]
-// 必要条件: SUPABASE_URL/SERVICE_ROLE_KEY + ANTHROPIC_API_KEY (PIPELINE_ENV != dry_run)。
+// 必要条件: SUPABASE_URL/SERVICE_ROLE_KEY + LLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)。
 // 未設定時はplanモードで対象一覧のみ表示する。全件は承認キューに積まれ、公開は人間承認後。
 //
 // --redo: 未公開の改修案を破棄して作り直す (プロンプトを直したあとの再生成用)。
 // 承認済み・公開済みは破棄せずスキップする。作り直したい場合は管理画面で取消してから再実行する。
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { listRefitTargets, makeLLMClient, refitBatch, SupabaseStore } from "@kurimikan/pipeline";
+import {
+  listRefitTargets,
+  llmBudgetUsd,
+  llmConfigured,
+  makeLLMClient,
+  refitBatch,
+  SupabaseStore,
+} from "@kurimikan/pipeline";
 
 const args = process.argv.slice(2);
 const argOf = (name: string) => {
@@ -41,10 +48,12 @@ async function main() {
   const configured =
     process.env.SUPABASE_URL &&
     process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    process.env.ANTHROPIC_API_KEY &&
+    llmConfigured() &&
     process.env.PIPELINE_ENV !== "dry_run";
   if (!configured) {
-    console.log("実行にはSUPABASE_URL/SERVICE_ROLE_KEY/ANTHROPIC_API_KEYとPIPELINE_ENV=productionが必要です");
+    console.log(
+      "実行にはSUPABASE_URL/SERVICE_ROLE_KEYとLLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)、PIPELINE_ENV=productionが必要です",
+    );
     return;
   }
 
@@ -68,7 +77,7 @@ async function main() {
     store,
     llm,
     suitePath: SUITE_PATH,
-    budgetUsd: Number(process.env.MONTHLY_TOKEN_BUDGET_USD ?? 60),
+    budgetUsd: llmBudgetUsd(),
     directives: directives as Record<string, import("@kurimikan/pipeline").EditorialDirective>,
   }, { limit, redo, slugs });
 

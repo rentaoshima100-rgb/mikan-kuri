@@ -1,15 +1,17 @@
-// 一次情報の自動リサーチ (v3 Sprint 1: 「一次情報を勝手にリサーチする仕組み」)。
+// 一次情報の自動リサーチ。
 //
-// Claudeの web_search サーバツールで、トピックに関する「出典URL付きの検証済みファクト」を
-// 自動収集し、primary_info_assets (public_data_analysis型) に投入する。記事生成時に注入され、
+// トピックに関する「出典URL付きの検証済みファクト」を自動収集し、
+// primary_info_assets (public_data型) に投入する。記事生成時に注入され、
 // P-04のハルシネーションflag (出典なし) を解消し、公開ファクトの実質を足す。
 //
-// 重要: ここで採れるのは「出典付きの公開情報」であり、最強の独自性は代表の自社実データ。
-// 自動リサーチは手間を減らすが、自社データ (ops_data/case_study) を完全には代替しない。
-// 安全網: 生成された資産は記事に注入されるが、記事はP-04ファクトチェック + 代表承認を必ず通る。
+// 重要: ここで採れるのは「出典付きの公開情報」であり、この案件で最強の独自性は
+// 産地の実測 (収穫日・糖度・その年の天候)。自動リサーチは手間を減らすが、
+// field_record / measurement / weather を完全には代替しない。
+// 安全網: 生成された資産は記事に注入されるが、記事は品質ゲート・法令ゲート・承認を必ず通る。
 import { z } from "zod";
 import {
   callAndParse,
+  FileBridge,
   fillTemplate,
   getPrompt,
   registerExtraPrompt,
@@ -82,17 +84,59 @@ export class AnthropicResearchClient implements ResearchClient {
   }
 }
 
+// サブスク実行 (LLM_BACKEND=bridge) 用。web_search APIの代わりに、ルーチンの
+// Claude CodeエージェントにWebSearchツールでリサーチさせる (docs/ROUTINES.md)。
+// 応答は {text, sources:[{url,title}]}。出典が返らなければ従来と同じく資産は作られない
+// (researchTopicToAsset側の「出典なしは投入しない」ガードがそのまま効く)。
+export class BridgeResearchClient implements ResearchClient {
+  private bridge: FileBridge;
+  constructor(bridge?: FileBridge) {
+    if (!bridge && process.env.PIPELINE_ENV === "dry_run") {
+      throw new Error("dry_runでBridgeResearchClientは使用できません");
+    }
+    this.bridge = bridge ?? new FileBridge();
+  }
+
+  async research(query: string): Promise<ResearchOutput> {
+    const res = await this.bridge.exchange("research", {
+      query,
+      expected_response:
+        '{"text":"リサーチ結果の本文 (出典URL付き箇条書き)","sources":[{"url":"実際に参照したURL","title":"ページ名"}]}',
+    });
+    if (typeof res.text !== "string" || res.text.length === 0) {
+      throw new Error("ブリッジのリサーチ応答にtextがありません");
+    }
+    const sources: ResearchSource[] = [];
+    if (Array.isArray(res.sources)) {
+      for (const it of res.sources as { url?: unknown; title?: unknown }[]) {
+        if (typeof it?.url === "string" && it.url) {
+          sources.push({ url: it.url, title: typeof it.title === "string" ? it.title : "" });
+        }
+      }
+    }
+    return { text: res.text, sources };
+  }
+}
+
+// 実行環境に応じたResearchClient生成 (makeLLMClientと対になる)
+export function makeResearchClient(): ResearchClient {
+  if (process.env.LLM_BACKEND === "bridge") return new BridgeResearchClient();
+  return new AnthropicResearchClient();
+}
+
 const RESEARCH_QUERY = (topic: string) =>
-  `あなたは日本の中小企業向けWeb制作/AI活用メディアの編集リサーチャです。
+  `あなたは柑橘の産地直送ECのオウンドメディアの編集リサーチャです。
 次のトピックについて、記事に使える「出典が明確な検証済みファクト」をWeb検索で3〜6個集めてください。
 
 トピック: ${topic}
 
 条件:
-- 政府統計 (総務省・中小企業庁・IPA等)、公式ドキュメント (Google/各社公式)、信頼できる業界調査を優先
+- 政府統計 (農林水産省の特産果樹生産動態等調査、作物統計等)、県・JAの公表資料、
+  品種登録情報、信頼できる業界調査を優先
 - 各ファクトに、実在する出典URLと、数値があれば数値・単位を必ず添える
 - 出典が確認できないものは含めない
-- 日本の中小企業の実務に直結するものを選ぶ
+- 効能効果 (免疫力・風邪予防等) に関する情報は集めない。食品では書けないため
+- 産地・品種・時期・栽培・流通に直結するものを選ぶ
 
 見つけたファクトを、出典URLとともに箇条書きでまとめてください。`;
 
@@ -179,7 +223,7 @@ export async function researchTopicToAsset(
   );
 
   const asset = await deps.store.insertPrimaryAsset({
-    asset_type: "public_data_analysis",
+    asset_type: "public_data",
     title: structured.title,
     description: structured.description,
     content: structured.content,

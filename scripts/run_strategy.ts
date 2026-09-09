@@ -2,9 +2,14 @@
 //   npx tsx scripts/run_strategy.ts
 // GSC/GA4/公開実績/トリップワイヤを集計してP-16に渡し、来月の方針レポートを生成・保存する。
 // レポートは strategy_reports に保存され、管理画面の「戦略」で代表が確認 (自動適用しない)。
-// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + ANTHROPIC_API_KEY (PIPELINE_ENV != dry_run)。
+// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + LLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)。
 import { join } from "node:path";
-import { makeLLMClient, runMonthlyStrategy, SupabaseStore } from "@kurimikan/pipeline";
+import {
+  llmConfigured,
+  makeLLMClient,
+  runMonthlyStrategy,
+  SupabaseStore,
+} from "@kurimikan/pipeline";
 
 const SUITE_PATH = join(import.meta.dirname, "..", "kurimikan_prompt_suite_v1.md");
 
@@ -12,7 +17,7 @@ async function main() {
   const configured =
     process.env.SUPABASE_URL &&
     process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    process.env.ANTHROPIC_API_KEY &&
+    llmConfigured() &&
     process.env.PIPELINE_ENV !== "dry_run";
   if (!configured) {
     console.log("[plan] キー未設定またはdry_runのため実行しません。");

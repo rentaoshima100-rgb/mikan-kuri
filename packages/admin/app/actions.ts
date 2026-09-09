@@ -12,6 +12,7 @@ import {
   fileManualAction,
   makeLLMClient,
   makeShopifyPublisher,
+  markGateApproved,
   recordReferrerLogCv,
   recordSelfReportCv,
   rejectLink,
@@ -57,9 +58,17 @@ export async function cancelAction(formData: FormData): Promise<void> {
   revalidatePath("/");
 }
 
-// gate_pending (品質ホールド) の人間承認 → 残りステップを再開して承認キューへ
+// gate_pending (品質ホールド) の人間承認 → 残りステップを再開して承認キューへ。
+// サブスク実行 (APIキーなし) の構成では、残りステップ (合議→仕上げ) のLLMを
+// Vercel上で呼べないため、承認マーカだけを記録して次のルーチン実行に引き継ぐ
+// (routine_daily の gate_continue ステップ。docs/ROUTINES.md)。
 export async function approveGateAction(formData: FormData): Promise<void> {
   const store = getStore();
+  if (!process.env.ANTHROPIC_API_KEY) {
+    await markGateApproved(requiredId(formData), DECIDER, { store });
+    revalidatePath("/");
+    return;
+  }
   const llm = await makeLLMClient(store);
   await continueFromGate(requiredId(formData), {
     store,

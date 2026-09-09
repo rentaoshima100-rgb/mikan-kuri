@@ -27,7 +27,9 @@
     "shopify:bootstrap-blog": "tsx scripts/shopify/bootstrap_blog.ts",
     "refit:batch": "tsx scripts/refit_batch.ts",
     "dedup:sweep": "tsx scripts/dedup_sweep.ts",
-    "rank:watch": "tsx scripts/rank_watch.ts"
+    "rank:watch": "tsx scripts/rank_watch.ts",
+    "routine:daily": "tsx scripts/jobs/routine_daily.ts",
+    "bridge:reply": "tsx scripts/bridge_reply.ts"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.49.0",

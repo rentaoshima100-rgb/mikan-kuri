@@ -1,10 +1,11 @@
 // 一次情報の自動リサーチCLI (v3 Sprint 1)。
 //   npx tsx scripts/research_topic.ts --topic "社内 システム開発 外注 費用" --cluster system_dev
 // web_searchで出典付きファクトを収集し、primary_info_assets に投入する。
-// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + ANTHROPIC_API_KEY (PIPELINE_ENV != dry_run)。
+// 必要: SUPABASE_URL/SERVICE_ROLE_KEY + LLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)。
 import { join } from "node:path";
 import {
   AnthropicResearchClient,
+  llmConfigured,
   makeLLMClient,
   researchTopicToAsset,
   SupabaseStore,
@@ -29,7 +30,7 @@ async function main() {
   const configured =
     process.env.SUPABASE_URL &&
     process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    process.env.ANTHROPIC_API_KEY &&
+    llmConfigured() &&
     process.env.PIPELINE_ENV !== "dry_run";
   if (!configured) {
     console.log("[plan] キー未設定またはdry_runのため実行しません。");

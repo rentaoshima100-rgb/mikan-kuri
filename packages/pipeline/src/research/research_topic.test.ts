@@ -39,13 +39,17 @@ describe("research_topic: 出典付きファクトの自動リサーチ → 資�
       },
     };
     const { store, deps } = makeDeps(research);
-    const r = await researchTopicToAsset(deps, { topic: "中小企業 HP 開設率", cluster: "renewal" });
+    const r = await researchTopicToAsset(deps, {
+      topic: "河内晩柑 作付面積",
+      cluster: "citrus_variety",
+    });
 
     expect(r.asset).toBeTruthy();
-    expect(r.asset!.asset_type).toBe("public_data_analysis");
-    expect(r.asset!.applicable_clusters).toContain("renewal");
+    // 0014 で asset_type を柑橘ECの分類へ張り替えた。公的統計由来は public_data
+    expect(r.asset!.asset_type).toBe("public_data");
+    expect(r.asset!.applicable_clusters).toContain("citrus_variety");
     // 記事生成時にクラスタで注入される状態になっている
-    const injectable = await store.listActiveAssetsByCluster("renewal", 3);
+    const injectable = await store.listActiveAssetsByCluster("citrus_variety", 3);
     expect(injectable.map((a) => a.id)).toContain(r.asset!.id);
     // numeric_claims に出典 (basis) が入っている
     expect(JSON.stringify(r.asset!.numeric_claims)).toContain("総務省");

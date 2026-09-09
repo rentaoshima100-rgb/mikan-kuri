@@ -6,6 +6,9 @@ coverage/
 
 # 実名・案件情報を含みうる一次情報の実データ (Supabaseにのみ入れる。リポジトリにコミットしない)
 .local/
+
+# サブスク実行のLLMブリッジ (要求/応答ファイルの一時置き場。docs/ROUTINES.md)
+.llm-bridge/
 .env
 .env.local
 *.log
