@@ -178,6 +178,9 @@ export class MemoryStore implements Store {
       this.articleAssets.push({ article_id: articleId, asset_id: assetId });
     }
   }
+  async listAssetIdsForArticle(articleId: string) {
+    return this.articleAssets.filter((r) => r.article_id === articleId).map((r) => r.asset_id);
+  }
   async listArticleIdsUsingExpiredAssets(asOf: Date = new Date()) {
     const today = asOf.toISOString().slice(0, 10);
     const expired = new Set(

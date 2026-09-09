@@ -137,6 +137,33 @@ describe("approvals: 全自動承認 (full_auto_publish)", () => {
     expect(ackd?.decided_by).toBe("system:full_auto");
   });
 
+  it("auto_approve_scope=no_primary_info: 一次情報を使う記事は承認キューに残す", async () => {
+    // 弊社は法令も文章も検証できるが、産地の事実 (収穫日・糖度・天候) は検証できない。
+    // 自動化の第1段では、公開情報で裏が取れる型だけを自動に乗せる
+    const store = new MemoryStore();
+    store.setConfig("weekly_publish_target", 2);
+    store.setConfig("auto_approve_scope", "no_primary_info");
+    const plain = await addPending(store, "河内晩柑 保存方法");
+    const withInfo = await addPending(store, "河内晩柑 今年の糖度");
+    const asset = store.addAsset({ title: "2026年1月の糖度実測" });
+    await store.recordArticleAssets(withInfo.id, [asset.id]);
+
+    const approved = await autoApproveAllPending({ store, now: () => T0 });
+
+    expect(approved).toEqual([plain.id]);
+    expect((await store.getArticle(withInfo.id))!.status).toBe("approval_pending");
+  });
+
+  it("auto_approve_scope=all (既定) なら一次情報つきも自動承認する", async () => {
+    const store = new MemoryStore();
+    store.setConfig("weekly_publish_target", 2);
+    const withInfo = await addPending(store, "河内晩柑 今年の糖度");
+    const asset = store.addAsset({ title: "2026年1月の糖度実測" });
+    await store.recordArticleAssets(withInfo.id, [asset.id]);
+
+    expect(await autoApproveAllPending({ store, now: () => T0 })).toEqual([withInfo.id]);
+  });
+
   it("承認待ち以外 (draft等) は対象外", async () => {
     const store = new MemoryStore();
     const draft = await addPending(store, "kw", {});

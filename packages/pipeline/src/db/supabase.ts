@@ -143,6 +143,16 @@ export class SupabaseStore implements Store {
     );
   }
 
+  async listAssetIdsForArticle(articleId: string): Promise<string[]> {
+    const res = await this.sb
+      .from("article_assets")
+      .select("asset_id")
+      .eq("article_id", articleId);
+    return ((this.ok(res, "listAssetIdsForArticle") ?? []) as { asset_id: string }[]).map(
+      (r) => r.asset_id,
+    );
+  }
+
   async listArticleIdsUsingExpiredAssets(asOf: Date = new Date()): Promise<string[]> {
     const today = asOf.toISOString().slice(0, 10);
     // 埋め込み結合で primary_info_assets.valid_until に条件を掛ける。

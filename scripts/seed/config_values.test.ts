@@ -31,6 +31,12 @@ describe("config_values: 初期値", () => {
     expect(cfg.approval_deadman_hours).toBe(72);
   });
 
+  it("全自動公開の対象は一次情報を使わない記事から始める", () => {
+    // 弊社は法令も文章も内部リンクも検証できるが、産地の事実 (収穫日・糖度・天候) は
+    // 検証できない。まずは公開情報で裏が取れる型だけを自動に乗せる
+    expect(cfg.auto_approve_scope).toBe("no_primary_info");
+  });
+
   it("全自動公開は既定オフ", () => {
     // trueにしても法令ゲートは止まる (generate.ts)。
     // 既定をオフにしておくのは、承認が唯一の公開トリガという元の設計に戻せる安全弁のため

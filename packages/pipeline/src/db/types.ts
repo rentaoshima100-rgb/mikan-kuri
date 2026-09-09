@@ -234,6 +234,8 @@ export interface Store {
   recordArticleAssets(articleId: string, assetIds: string[]): Promise<void>;
   // 期限切れの一次情報を使っている記事のID。改修バッチの対象を絞るのに使う
   listArticleIdsUsingExpiredAssets(asOf?: Date): Promise<string[]>;
+  // この記事が使った一次情報のID。自動承認の対象を絞るのに使う
+  listAssetIdsForArticle(articleId: string): Promise<string[]>;
   // 期限切れの一次情報に refresh_needed を立てる。返り値は件数。
   // 判定は決定論 (valid_until との比較) で、LLMは呼ばない
   markExpiredAssets(asOf?: Date): Promise<number>;

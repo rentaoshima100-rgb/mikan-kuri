@@ -34,6 +34,14 @@ export const PIPELINE_CONFIG_SEED: Record<string, unknown> = {
   // Googleと違い、薬機法・景表法は販売者に行政指導が来るため速度優先の対象外
   full_auto_publish: false,
 
+  // 全自動公開の対象範囲。自動化を段階的に上げるための刻み。
+  //   "no_primary_info" — 一次情報を使っていない記事だけ自動承認する。保存方法・むき方・
+  //     品種比較など、事実が公開情報で裏を取れる型が該当する。産地の実測 (収穫日・糖度・
+  //     その年の天候) を含む記事は、それを検証できる人が読むまで承認キューに残る
+  //   "all" — 承認待ちの全記事
+  // full_auto_publish=false の間は参照されない
+  auto_approve_scope: "no_primary_info",
+
   // API節約: 全自動時は生成/改稿を1パスで打ち切る。
   // ただし法令違反があるときは1パス短縮を適用せず、必ず書き直させる (generate.ts)
   full_auto_single_pass: true,

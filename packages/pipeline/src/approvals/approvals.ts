@@ -82,16 +82,42 @@ export async function approveArticle(
   return { scheduledAt, backlogWarning: warning };
 }
 
-// 全自動公開 (full_auto_publish=true)。承認待ちの全記事を代表の事前承認方針として
+// 全自動公開 (full_auto_publish=true)。承認待ちの記事を事前承認方針として
 // 自動承認し、即時公開の予定を割り当てる。
-//   - judgeAck=true: 全自動なのでjudge不一致も自動で承認する (v3の人間エスカレーションを上書き)
+//   - judgeAck=true: 全自動なのでjudge不一致も自動で承認する (人間エスカレーションを上書き)
 //   - scheduleNow=true: 均等分散せず「いま」を予定にして次のワーカ実行で公開
 // デッドマンで承認待ちに戻された記事もここで再承認されるため、ワーカ復旧後に自己回復する。
 // 1件失敗しても他は続行する (バッチ堅牢化)。
+//
+// auto_approve_scope で対象を絞れる (自動化を段階的に上げるための刻み):
+//   "all"          — 承認待ちの全記事 (既定)
+//   "no_primary_info" — 一次情報を使っていない記事だけ。保存方法・むき方・品種比較など、
+//     事実が公開情報で裏を取れる型に相当する。産地の実測 (収穫日・糖度・その年の天候) を
+//     含む記事は、それを検証できる人が読むまで承認キューに残る
+export type AutoApproveScope = "all" | "no_primary_info";
+
+// この記事が一次情報 (産地の実測) に依っているか。
+// article_assets に記録がある = 執筆時に資産を渡している
+async function usesPrimaryInfo(store: Store, articleId: string): Promise<boolean> {
+  return (await store.listAssetIdsForArticle(articleId)).length > 0;
+}
+
 export async function autoApproveAllPending(deps: ApprovalDeps): Promise<string[]> {
   const { store } = deps;
+  const scope =
+    (await store.getConfig<AutoApproveScope>("auto_approve_scope")) ?? "all";
   const approved: string[] = [];
   for (const article of await store.listArticlesByStatus("approval_pending")) {
+    if (scope === "no_primary_info" && (await usesPrimaryInfo(store, article.id))) {
+      console.log(
+        JSON.stringify({
+          job: "auto_approve",
+          event: "skipped_uses_primary_info",
+          article_id: article.id,
+        }),
+      );
+      continue;
+    }
     try {
       await approveArticle(article.id, "system:full_auto", deps, {
         judgeAck: true,
