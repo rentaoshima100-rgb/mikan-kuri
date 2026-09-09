@@ -1,5 +1,8 @@
 // 既存記事の改修バッチ実行CLI。対象は公開済み記事 (articles.body_mdx)。
-//   npx tsx scripts/refit_batch.ts [--limit N] [--slug <slug>]... [--plan] [--redo]
+//   npx tsx scripts/refit_batch.ts [--limit N] [--slug <slug>]... [--plan] [--redo] [--stale]
+//
+// --stale: 期限切れの一次情報を使っている記事だけを対象にする。
+//   柑橘は年ごとに出来が変わるので、去年の糖度を載せたままの記事を洗い直すのに使う。
 // 必要条件: SUPABASE_URL/SERVICE_ROLE_KEY + LLM経路 (LLM_BACKEND=bridge または ANTHROPIC_API_KEY)。
 // 未設定時はplanモードで対象一覧のみ表示する。全件は承認キューに積まれ、公開は人間承認後。
 //
@@ -59,8 +62,11 @@ async function main() {
 
   const store = new SupabaseStore();
   // 対象はDBの公開済み記事。ストアを読む必要はない
-  const entries = await listRefitTargets(store);
-  console.log(`対象記事: ${entries.length}本 (公開済み)`);
+  const stale = args.includes("--stale");
+  const entries = await listRefitTargets(store, { staleOnly: stale });
+  console.log(
+    `対象記事: ${entries.length}本 (${stale ? "期限切れの一次情報を使っている公開済み記事" : "公開済み"})`,
+  );
   if (args.includes("--plan")) {
     console.log("[plan] 実行せず対象のみ表示:");
     for (const e of entries) console.log(`  ${e.slug}: ${e.title}`);
@@ -79,7 +85,7 @@ async function main() {
     suitePath: SUITE_PATH,
     budgetUsd: llmBudgetUsd(),
     directives: directives as Record<string, import("@kurimikan/pipeline").EditorialDirective>,
-  }, { limit, redo, slugs });
+  }, { limit, redo, slugs, stale });
 
   console.log(
     `処理: ${result.processed.length}本 / スキップ: ${result.skipped.length}本` +

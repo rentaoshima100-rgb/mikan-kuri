@@ -34,6 +34,8 @@ export class MemoryStore implements Store {
   approvals: ApprovalRow[] = [];
   queue: PublishQueueRow[] = [];
   assets: PrimaryAssetRow[] = [];
+  // 記事が使った一次情報 (article_assets テーブル相当)
+  articleAssets: { article_id: string; asset_id: string }[] = [];
   links: InternalLinkRow[] = [];
   usage: ApiUsageRow[] = [];
   prompts = new Map<string, string>();
@@ -167,6 +169,36 @@ export class MemoryStore implements Store {
     for (const asset of this.assets) {
       if (assetIds.includes(asset.id)) asset.usage_count += 1;
     }
+  }
+  async recordArticleAssets(articleId: string, assetIds: string[]) {
+    for (const assetId of new Set(assetIds)) {
+      if (this.articleAssets.some((r) => r.article_id === articleId && r.asset_id === assetId)) {
+        continue;
+      }
+      this.articleAssets.push({ article_id: articleId, asset_id: assetId });
+    }
+  }
+  async listArticleIdsUsingExpiredAssets(asOf: Date = new Date()) {
+    const today = asOf.toISOString().slice(0, 10);
+    const expired = new Set(
+      this.assets.filter((a) => a.valid_until != null && a.valid_until < today).map((a) => a.id),
+    );
+    return [
+      ...new Set(
+        this.articleAssets.filter((r) => expired.has(r.asset_id)).map((r) => r.article_id),
+      ),
+    ];
+  }
+  async markExpiredAssets(asOf: Date = new Date()) {
+    const today = asOf.toISOString().slice(0, 10);
+    let n = 0;
+    for (const a of this.assets) {
+      if (a.status === "active" && a.valid_until != null && a.valid_until < today) {
+        a.status = "refresh_needed";
+        n++;
+      }
+    }
+    return n;
   }
   async insertInternalLinks(rows: InternalLinkInsert[]) {
     for (const row of rows) this.links.push({ id: nextId(), ...row });

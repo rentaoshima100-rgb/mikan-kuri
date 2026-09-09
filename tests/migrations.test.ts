@@ -67,7 +67,9 @@ describe("migrations: v3差分パッチの適用", () => {
   });
 
   it("全テーブルにRLSが有効化されている", () => {
-    const tables = [...all.matchAll(/create table (\w+)/g)].map((m) => m[1]);
+    // "create table if not exists <name>" も拾う (これを見落とすと "if" をテーブル名として
+    // 扱い、RLSの検査が空振りする)
+    const tables = [...all.matchAll(/create table (?:if not exists )?(\w+)/g)].map((m) => m[1]);
     expect(tables.length).toBeGreaterThanOrEqual(20);
     // 0005より後のマイグレーションで作られたテーブルは、0005に追記しても
     // 適用済み環境には効かないため、作成したマイグレーション自身でRLSを有効化する。

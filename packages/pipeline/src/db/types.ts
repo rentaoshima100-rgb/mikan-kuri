@@ -230,6 +230,13 @@ export interface Store {
   insertPrimaryAsset(asset: PrimaryAssetInsert): Promise<PrimaryAssetRow>;
   // 使用回数の加算。選抜は usage_count 昇順なので、加算しないと同じ資産が使われ続ける
   incrementAssetUsage(assetIds: string[]): Promise<void>;
+  // 記事が使った一次情報の記録。期限切れ素材から改修対象の記事を逆引きするために使う
+  recordArticleAssets(articleId: string, assetIds: string[]): Promise<void>;
+  // 期限切れの一次情報を使っている記事のID。改修バッチの対象を絞るのに使う
+  listArticleIdsUsingExpiredAssets(asOf?: Date): Promise<string[]>;
+  // 期限切れの一次情報に refresh_needed を立てる。返り値は件数。
+  // 判定は決定論 (valid_until との比較) で、LLMは呼ばない
+  markExpiredAssets(asOf?: Date): Promise<number>;
   insertInternalLinks(rows: InternalLinkInsert[]): Promise<void>;
   // 内部リンクの承認キュー (inboundは公開済み記事の書き換えになるため人間が承認する)
   listInternalLinksByStatus(status: InternalLinkStatus): Promise<InternalLinkRow[]>;

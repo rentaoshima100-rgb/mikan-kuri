@@ -292,7 +292,7 @@ export async function generateArticle(
     }
   }
 
-  const finalized = await finalizeToApprovalQueue(deps, article.id, keyword, outline, body);
+  const finalized = await finalizeToApprovalQueue(deps, article.id, keyword, outline, body, assets);
   // タイトル重複で却下された場合、キーワードは記事化済み (done) ではなく保留 (parked)。
   // doneにすると「書いた」ことになり、同じ穴を埋める提案が二度と出なくなる
   await store.updateKeywordStatus(keyword.id, finalized === "approval_pending" ? "done" : "parked");
@@ -344,7 +344,7 @@ export async function continueFromGate(
       body = await runNumericCheck(deps, articleId, body, assets, consensus.removeTargets);
     }
   }
-  const finalized = await finalizeToApprovalQueue(deps, articleId, keyword, outline, body);
+  const finalized = await finalizeToApprovalQueue(deps, articleId, keyword, outline, body, assets);
   await store.updateKeywordStatus(keyword.id, finalized === "approval_pending" ? "done" : "parked");
   return (await store.getArticle(articleId))!;
 }
@@ -895,6 +895,8 @@ async function finalizeToApprovalQueue(
   keyword: KeywordRow,
   outline: P01OutlineT,
   body: string,
+  // 本文の執筆に渡した一次情報。期限切れ素材から記事を逆引きするために記録する
+  assets: PrimaryAssetRow[],
 ): Promise<"approval_pending" | "duplicate_title" | "compliance_blocked"> {
   const { store } = deps;
 
@@ -1093,6 +1095,17 @@ async function finalizeToApprovalQueue(
     .map((p) => p.asset_id)
     .filter((id): id is string => Boolean(id));
   if (usedAssetIds.length) await store.incrementAssetUsage(usedAssetIds);
+
+  // 記事↔一次情報の紐付けを残す。素材が期限切れになったとき、それを使っている
+  // 公開済み記事を逆引きして改修対象にするために要る (全自動公開では、出した後の
+  // 巡回が唯一の是正手段になる)。
+  // 記録するのは primary_info_plan ではなく執筆に渡した資産すべて。P-02のプロンプトは
+  // 渡した資産を織り込むよう指示するので、planに載っていない資産も本文に入りうる。
+  // 取りこぼすより多めに拾うほうが安全側
+  await store.recordArticleAssets(
+    articleId,
+    assets.map((a) => a.id),
+  );
 
   // v3: 全記事は承認キューへ。publish_queue投入とscheduled_at割当は承認時に行う。
   // 法令チェックとコレクション導線の結果は quality に同梱して承認画面へ出す

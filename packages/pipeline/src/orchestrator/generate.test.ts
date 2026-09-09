@@ -57,6 +57,21 @@ function makeWorld(opts: {
 
 const promptIds = (llm: FixtureLLMClient) => llm.calls.map((c) => c.promptId);
 
+describe("orchestrator: 記事と一次情報の紐付け", () => {
+  it("執筆に渡した一次情報を article_assets に残す", async () => {
+    // 素材が期限切れになったとき、それを使っている公開済み記事を逆引きして
+    // 改修対象にするために要る。全自動公開では出した後の巡回が唯一の是正手段になる
+    const { store, kw, deps } = makeWorld({ lane: "A" });
+    const article = await generateArticle(kw.id, deps);
+
+    const assetId = store.assets[0]!.id;
+    expect(store.articleAssets).toContainEqual({
+      article_id: article.id,
+      asset_id: assetId,
+    });
+  });
+});
+
 describe("orchestrator: レーンA (人間ネタ投入)", () => {
   it("happy path: 承認キュー (approval_pending) に到達し、publish_queueには入らない (v3)", async () => {
     const { store, kw, deps } = makeWorld({ lane: "A" });

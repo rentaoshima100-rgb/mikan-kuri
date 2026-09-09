@@ -94,12 +94,25 @@ export interface RefitEntry {
   targetCollection?: string | null;
 }
 
-/** 公開済み記事を改修対象として列挙する。 */
-export async function listRefitTargets(store: Store): Promise<RefitEntry[]> {
+/**
+ * 公開済み記事を改修対象として列挙する。
+ *
+ * staleOnly: 期限切れの一次情報を使っている記事だけに絞る。
+ * 柑橘は年ごとに出来が変わるので、去年の糖度を載せたままの記事は事実と違う記述になる。
+ * 全自動公開では人が本文を読まないため、ここが唯一の是正経路になる。
+ */
+export async function listRefitTargets(
+  store: Store,
+  opts: { staleOnly?: boolean; asOf?: Date } = {},
+): Promise<RefitEntry[]> {
   const published = await store.listArticlesByStatus("published");
+  const stale = opts.staleOnly
+    ? new Set(await store.listArticleIdsUsingExpiredAssets(opts.asOf))
+    : null;
   const entries: RefitEntry[] = [];
   for (const a of published) {
     if (!a.slug || !a.title || !a.body_mdx) continue;
+    if (stale && !stale.has(a.id)) continue;
     const keyword = await store.getKeyword(a.keyword_id);
     entries.push({
       articleId: a.id,
@@ -294,6 +307,12 @@ export async function refitArticle(entry: RefitEntry, deps: RefitDeps): Promise<
   const newBody = best.body;
   const verdict = best.verdict;
 
+  // 改修案が使った一次情報も記録する (新規生成と同じ。期限切れからの逆引き用)
+  await store.recordArticleAssets(
+    article.id,
+    assets.map((a) => a.id),
+  );
+
   await store.updateArticle(article.id, {
     quality: verdict,
     quality_score: verdict.scores.total,
@@ -388,16 +407,22 @@ async function discardExistingDrafts(
 
 export async function refitBatch(
   deps: RefitDeps,
-  opts: { limit?: number; redo?: boolean; slugs?: string[] } = {},
+  opts: { limit?: number; redo?: boolean; slugs?: string[]; stale?: boolean } = {},
 ): Promise<RefitBatchResult> {
-  const all = await listRefitTargets(deps.store);
+  const all = await listRefitTargets(deps.store, {
+    staleOnly: opts.stale,
+    asOf: deps.now?.(),
+  });
   // slug指定は、プロンプトや一次情報を変えた効果を1本で確かめるための入口。
   // 公開順に依存せず、狙った記事だけを回せるようにする。
   const entries = opts.slugs?.length ? all.filter((e) => opts.slugs!.includes(e.slug)) : all;
   const result: RefitBatchResult = { processed: [], skipped: [], discarded: [], failed: [] };
   for (const s of opts.slugs ?? []) {
     if (!all.some((e) => e.slug === s)) {
-      result.skipped.push({ slug: s, reason: "slug_not_found_in_published_articles" });
+      result.skipped.push({
+        slug: s,
+        reason: opts.stale ? "slug_not_stale" : "slug_not_found_in_published_articles",
+      });
     }
   }
 

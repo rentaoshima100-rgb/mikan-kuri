@@ -133,6 +133,42 @@ export class SupabaseStore implements Store {
       .single();
     return this.ok(res, "insertPrimaryAsset") as PrimaryAssetRow;
   }
+  async recordArticleAssets(articleId: string, assetIds: string[]): Promise<void> {
+    const rows = [...new Set(assetIds)].map((asset_id) => ({ article_id: articleId, asset_id }));
+    if (!rows.length) return;
+    // 同じ記事を作り直したときに衝突しないよう upsert (主キーは article_id + asset_id)
+    this.ok(
+      await this.sb.from("article_assets").upsert(rows, { onConflict: "article_id,asset_id" }),
+      "recordArticleAssets",
+    );
+  }
+
+  async listArticleIdsUsingExpiredAssets(asOf: Date = new Date()): Promise<string[]> {
+    const today = asOf.toISOString().slice(0, 10);
+    // 埋め込み結合で primary_info_assets.valid_until に条件を掛ける。
+    // !inner にしないと条件を満たさない行がnull埋めで返る
+    const res = await this.sb
+      .from("article_assets")
+      .select("article_id, primary_info_assets!inner(valid_until)")
+      .lt("primary_info_assets.valid_until", today);
+    const rows = (this.ok(res, "listArticleIdsUsingExpiredAssets") ?? []) as unknown as {
+      article_id: string;
+    }[];
+    return [...new Set(rows.map((r) => r.article_id))];
+  }
+
+  async markExpiredAssets(asOf: Date = new Date()): Promise<number> {
+    const today = asOf.toISOString().slice(0, 10);
+    const res = await this.sb
+      .from("primary_info_assets")
+      .update({ status: "refresh_needed" })
+      .eq("status", "active")
+      .not("valid_until", "is", null)
+      .lt("valid_until", today)
+      .select("id");
+    return ((this.ok(res, "markExpiredAssets") ?? []) as { id: string }[]).length;
+  }
+
   async incrementAssetUsage(assetIds: string[]): Promise<void> {
     if (!assetIds.length) return;
     // 件数が少ないため read-modify-write で十分 (同時実行は生成オーケストレータ1本のみ)

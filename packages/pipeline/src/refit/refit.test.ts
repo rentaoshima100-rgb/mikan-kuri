@@ -75,6 +75,40 @@ describe("refit: 対象の列挙", () => {
     expect(targets[0]!.body).toContain("元の本文です");
   });
 
+  it("staleOnly: 期限切れの一次情報を使っている記事だけを返す", async () => {
+    const { store, targets } = await makeWorld();
+    const fresh = store.addAsset({
+      title: "今季の糖度",
+      applicable_clusters: ["kanpei"],
+      valid_until: "2026-12-31",
+    });
+    const expired = store.addAsset({
+      title: "昨季の糖度",
+      applicable_clusters: ["nankan20"],
+      valid_until: "2026-03-31",
+    });
+    await store.recordArticleAssets(targets[0]!.articleId, [fresh.id]);
+    await store.recordArticleAssets(targets[1]!.articleId, [expired.id]);
+
+    const stale = await listRefitTargets(store, {
+      staleOnly: true,
+      asOf: new Date("2026-09-08T00:00:00Z"),
+    });
+    expect(stale.map((t) => t.slug)).toEqual(["nankan-season"]);
+  });
+
+  it("markExpiredAssets: 期限切れに refresh_needed を立てる", async () => {
+    const { store } = await makeWorld();
+    store.addAsset({ title: "期限なし", applicable_clusters: ["kanpei"] });
+    store.addAsset({ title: "切れた", applicable_clusters: ["kanpei"], valid_until: "2026-03-31" });
+
+    const marked = await store.markExpiredAssets(new Date("2026-09-08T00:00:00Z"));
+
+    expect(marked).toBe(1);
+    expect(store.assets.find((a) => a.title === "切れた")!.status).toBe("refresh_needed");
+    expect(store.assets.find((a) => a.title === "期限なし")!.status).toBe("active");
+  });
+
   it("未公開の記事は対象にしない", async () => {
     const { store } = await makeWorld();
     const kw = store.addKeyword({ keyword: "下書き" });

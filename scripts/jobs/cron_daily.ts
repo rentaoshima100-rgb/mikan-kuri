@@ -112,6 +112,10 @@ await runJob("cron-daily", async (store: Store) => {
     ["gsc_sync", () => runGscSync({ store })],
     // 順位監視 (DataForSEO内製、代表指示 2026-08-14)。creds未設定なら自動スキップ
     ["rank_watch", () => runRankWatch({ store })],
+    // 期限切れの一次情報に refresh_needed を立てる (決定論、LLM不要)。
+    // 選択時の足切り (listActiveAssetsByCluster) とは別に、代表が「測り直すもの」を
+    // 一覧できるようにするための印。DAILY_LLM_STEPS=off でも動かす
+    ["mark_expired_assets", async () => ({ marked: await store.markExpiredAssets() })],
     // 発案。既定では proposed で止まる (代表が承認するまで記事化されない)
     [
       "propose_keywords",
