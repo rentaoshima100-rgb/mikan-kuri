@@ -6,7 +6,7 @@ AI記事生成パイプライン。記事は Shopify の `/blogs/column` へ公�
 仕様: [`kurimikan_pipeline_spec.md`](kurimikan_pipeline_spec.md)（最優先） /
 [`kurimikan_prompt_suite_v1.md`](kurimikan_prompt_suite_v1.md)（プロンプト集の正本）。
 
-**公開のトリガは「代表が実記事を読んで承認ボタンを押す」の1つだけ。自動公開は存在しません。**
+**公開のトリガは「承認者が実記事を読んで承認ボタンを押す」の1つだけ。既定では自動公開しません。**
 **法令ゲート（薬機法・景表法ほか）は、全自動公開を有効にしても止まります。**
 
 ---
@@ -109,10 +109,12 @@ Shopify管理画面のコレクション一覧で確認して、必要なら修�
 ## 日常の運用
 
 ```bash
-npm run propose:keywords   # トピック発案 (承認したものだけが記事化される)
-npm run generate:queue     # 承認済みキーワードから記事生成
-npm run refit:batch        # 公開済み記事の改修
-npm run dedup:sweep        # 公開前バックログの重複掃除
+npm run propose:keywords         # トピック発案 (承認したものだけが記事化される)
+npm run generate:queue           # 承認済みキーワードから記事生成
+npm run refit:batch              # 公開済み記事の改修
+npm run refit:batch -- --stale   # 期限切れの一次情報を使っている記事だけ改修
+npm run dedup:sweep              # 公開前バックログの重複掃除
+npm run routine:daily            # 日次LLMループ (通常はルーチンが実行する)
 ```
 
 管理画面:
@@ -121,7 +123,7 @@ npm run dedup:sweep        # 公開前バックログの重複掃除
 npm run dev -w @kurimikan/admin
 ```
 
-代表がやることは6つだけです。
+承認者がやることは6つだけです。
 
 1. 承認キューで記事を読んで承認する（公開の唯一のトリガ）
 2. 一次情報を入れる（畑の写真、収穫日、糖度の実測、その年の天候）
@@ -131,6 +133,7 @@ npm run dev -w @kurimikan/admin
 6. 法令ゲートで止まった記事の判断
 
 運用手順の詳細は [docs/RUNBOOK.md](docs/RUNBOOK.md)。
+LLMをサブスク実行に載せる手順は [docs/ROUTINES.md](docs/ROUTINES.md)。
 
 ---
 
@@ -167,5 +170,7 @@ metafieldの組み立ては本物が動きます。
 - [ ] コレクションページ本文の追加（品種の特徴・時期・食べ方を数百字）
 - [ ] IndexNowキーの生成と `https://kuri-mikan.jp/<キー>.txt` の配置
 - [ ] GitHub Secrets の登録（`SHOPIFY_SHOP`, `SHOPIFY_ADMIN_TOKEN`, `SUPABASE_*` ほか）
+- [ ] 日次ルーチンの作成（[docs/ROUTINES.md](docs/ROUTINES.md) のプロンプトをそのまま使う）
+- [ ] ルーチン環境の egress 許可リストに Supabase と `<shop>.myshopify.com` を追加
 - [ ] Search Console / GA4 のサービスアカウント発行
 - [ ] `estat_targets` に農林水産省の統計ID（作付面積・出荷量）を投入
