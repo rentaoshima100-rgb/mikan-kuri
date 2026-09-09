@@ -57,6 +57,29 @@ function makeWorld(opts: {
 
 const promptIds = (llm: FixtureLLMClient) => llm.calls.map((c) => c.promptId);
 
+describe("orchestrator: 全自動時の数値チェック", () => {
+  it("full_auto ではレーンAの記事にも合議 (P-05) を掛ける", async () => {
+    // 全自動では人が本文を読まないので、収穫時期・糖度・価格のような
+    // 「産地の人にしか検証できない数値」を誰も確かめないまま公開してしまう。
+    // サブスク実行では呼び出しに課金が無いため、ここを厚くしても増えるのは時間だけ
+    const { store, llm, kw, deps } = makeWorld({ lane: "A" });
+    store.setConfig("full_auto_publish", true);
+
+    await generateArticle(kw.id, deps);
+
+    expect(promptIds(llm)).toContain("P-05a");
+    expect(promptIds(llm)).toContain("P-05b");
+  });
+
+  it("既定 (承認制) のレーンAでは従来どおり合議を掛けない", async () => {
+    const { llm, kw, deps } = makeWorld({ lane: "A" });
+
+    await generateArticle(kw.id, deps);
+
+    expect(promptIds(llm)).not.toContain("P-05a");
+  });
+});
+
 describe("orchestrator: 記事と一次情報の紐付け", () => {
   it("執筆に渡した一次情報を article_assets に残す", async () => {
     // 素材が期限切れになったとき、それを使っている公開済み記事を逆引きして

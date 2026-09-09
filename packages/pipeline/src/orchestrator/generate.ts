@@ -258,8 +258,16 @@ export async function generateArticle(
     return (await store.getArticle(article.id))!;
   }
 
-  // レーンB: P-05合議ファクトチェック
-  if (lane === "B") {
+  // 数値主張の合議ファクトチェック (P-05)。
+  //
+  // 通常はレーンBだけに掛ける。全自動公開では人が本文を読まないため、収穫時期・糖度・
+  // 価格といった「産地の人にしか検証できない数値」を誰も確かめないまま公開してしまう。
+  // そこで全自動時は全記事に効かせ、一次情報に裏付けのない数値をP-06で落とす。
+  //
+  // サブスク実行 (LLM_BACKEND=bridge) では呼び出しに課金が無いので、
+  // ここを厚くしても増えるのは実行時間だけ。従来この判定をレーンBに絞っていた理由が
+  // API課金だったため、その制約が消えている
+  if (lane === "B" || fullAuto) {
     const consensus = await runConsensus(deps, article.id, body, assets);
     await store.updateArticle(article.id, {
       consensus_result: consensus.detail,
@@ -332,7 +340,9 @@ export async function continueFromGate(
     asOf: deps.now?.(),
   });
 
-  if (article.lane === "B") {
+  // 全自動時は全記事に合議を掛ける (generateArticle と同じ理由)
+  const fullAuto = (await store.getConfig<boolean>("full_auto_publish")) ?? false;
+  if (article.lane === "B" || fullAuto) {
     const consensus = await runConsensus(deps, articleId, body, assets);
     await store.updateArticle(articleId, {
       consensus_result: consensus.detail,
@@ -735,6 +745,7 @@ async function writeAndGate(
   if (lane === "B") {
     body = await runNumericCheck(deps, articleId, body, assets, []);
   }
+
   // 表記・構造の機械チェック。P-04に出す前にダッシュ等を決定論的に潰す
   const notation = checkNotation(body);
   body = notation.body;
